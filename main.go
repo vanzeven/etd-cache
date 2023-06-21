@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	listPath()
+	cleanOutputFolder()
 
 	algorithm = os.Args[1]
 
@@ -136,7 +136,7 @@ func readFile(filePath string) (traces []simulator.Trace, err error) {
 	return traces, nil
 }
 
-func listPath() {
+func cleanOutputFolder() {
 	files, err := os.ReadDir("./output/")
 	if err != nil {
 		log.Fatal(err)
