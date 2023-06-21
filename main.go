@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"lirs2/lirs"
 	"lirs2/simulator"
 	"log"
 	"os"
@@ -14,74 +13,90 @@ import (
 
 func main() {
 	var (
-		traces    []simulator.Trace
+		traces    []simulator.Trace = make([]simulator.Trace, 0)
 		simulator simulator.Simulator
-		algorithm string
-		filePath  string
-		outPath   string
-		cacheList []int
 		timeStart time.Time
-		output    *os.File
-		fileInfo  os.FileInfo
-		err       error
+		out       *os.File
+		fs        os.FileInfo•
+	filePath  string
+	outPath   string
+	algorithm string
+	err       error
+	cacheList []int
 	)
 
 	if len(os.Args) < 4 {
-		fmt.Println("Usage: program_name <algorithm> <trace file> <trace size>")
+		fmt.Println("program [algorithm (LFU|LRU|LRUWSR)] [file trace] [cache size]...")
 		os.Exit(1)
 	}
 
 	algorithm = os.Args[1]
 
 	filePath = os.Args[2]
-	if fileInfo, err = os.Stat(filePath); os.IsExist(err) {
-		fmt.Printf("%v does not exist\n", filePath)
+	if fs, err = os.Stat(filePath); os.IsNotExist(err) {
+		fmt.Printf("%v does not exists\n", filePath)
 		os.Exit(1)
 	}
 
-	if traces, err = readFile(filePath); err != nil {
-		log.Fatalf("Error reading file %v: %v\n", filePath, err)
-	}
-
-	if cacheList, err = validateTraceSize(os.Args[3:]); err != nil {
-		fmt.Println(err)
+	cacheList, err = validateCacheSize(os.Args[3:])
+	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	outPath = fmt.Sprintf("./output/%v_%v_%v.txt", time.Now().Unix(), algorithm, fileInfo.Name())
-	if output, err = os.Create(outPath); err != nil {
-		log.Fatalf("Error creating file %v: %v\n", outPath, err)
+	traces, err = readFile(filePath)
+	if err != nil {
+		log.Fatalf("error reading file: %v", err)
 	}
 
-	defer func(output *os.File) {
-		err := output.Close()
-		if err != nil {
-			log.Fatalf("Error closing file %v: %v\n", outPath, err)
-		}
-	}(output)
+	outPath = fmt.Sprintf("%v_%v_%v.txt", time.Now().Unix(), algorithm, fs.Name())
 
-	for _, cacheSize := range cacheList {
+	out, err = os.Create("output" + "/" + outPath)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer out.Close()
+
+	for _, cache := range cacheList {
 		switch strings.ToLower(algorithm) {
-		case "lirs":
-			simulator = lirs.NewLIRS(cacheSize, 5)
+		case "lfu":
+			simulator = lfu.NewLFU(cache)
+		case "lru":
+			simulator = lru.NewLRU(cache)
+		case "lruwsr":
+			simulator = lruwsr.NewLRUWSR(cache)
 		default:
-			log.Fatal("Algorithm not supported")
+			log.Fatal("algorithm not supported")
 		}
 
 		timeStart = time.Now()
+
 		for _, trace := range traces {
 			err = simulator.Get(trace)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(err.Error())
 			}
 		}
 
-		if err = simulator.PrintToFile(output, timeStart); err != nil {
-			log.Fatal(err)
-		}
-
+		simulator.PrintToFile(out, timeStart)
 	}
-	fmt.Println("Simulation Done")
+	fmt.Println("Done")
+}
+
+func validateCacheSize(tracesize []string) (sizeList []int, err error) {
+	var (
+		cacheList []int
+		cache     int
+	)
+
+	for _, size := range tracesize {
+		cache, err = strconv.Atoi(size)
+		if err != nil {
+			return sizeList, err
+		}
+		cacheList = append(cacheList, cache)
+	}
+	return cacheList, nil
 }
 
 func readFile(filePath string) (traces []simulator.Trace, err error) {
@@ -91,8 +106,8 @@ func readFile(filePath string) (traces []simulator.Trace, err error) {
 		row     []string
 		address int
 	)
-
-	if file, err = os.Open(filePath); err != nil {
+	file, err = os.Open(filePath)
+	if err != nil {
 		return traces, err
 	}
 	defer file.Close()
@@ -107,23 +122,11 @@ func readFile(filePath string) (traces []simulator.Trace, err error) {
 		}
 		traces = append(traces,
 			simulator.Trace{
-				Address:   address,
-				Operation: row[1],
+				Addr: address,
+				Op:   row[1],
 			},
 		)
 	}
 
 	return traces, nil
-}
-
-func validateTraceSize(traceSizeList []string) (cacheList []int, err error) {
-	var cache int
-	for _, size := range traceSizeList {
-		cache, err = strconv.Atoi(size)
-		if err != nil {
-			return cacheList, err
-		}
-		cacheList = append(cacheList, cache)
-	}
-	return cacheList, nil
 }
