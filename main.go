@@ -3,6 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"lirs2/lfu"
+	"lirs2/lru"
+	"lirs2/lruwsr"
 	"lirs2/simulator"
 	"log"
 	"os"
@@ -17,12 +20,12 @@ func main() {
 		simulator simulator.Simulator
 		timeStart time.Time
 		out       *os.File
-		fs        os.FileInfo•
-	filePath  string
-	outPath   string
-	algorithm string
-	err       error
-	cacheList []int
+		fs        os.FileInfo
+		filePath  string
+		outPath   string
+		algorithm string
+		err       error
+		cacheList []int
 	)
 
 	if len(os.Args) < 4 {
