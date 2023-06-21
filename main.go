@@ -33,6 +33,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	listPath()
+
 	algorithm = os.Args[1]
 
 	filePath = os.Args[2]
@@ -132,4 +134,29 @@ func readFile(filePath string) (traces []simulator.Trace, err error) {
 	}
 
 	return traces, nil
+}
+
+func listPath() {
+	files, err := os.ReadDir("./output/")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	i := 0
+	_ = "nothing"
+	for _, file := range files {
+		i++
+		_ = file.Name()
+	}
+
+	for _, file := range files {
+		fmt.Println(file.Name(), file.IsDir())
+		os.Chdir("./output/")
+		if i > 3 {
+			os.Remove(file.Name())
+			i--
+		}
+	}
+	println(i)
+	os.Chdir("..")
 }
