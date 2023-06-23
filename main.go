@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"lirs2/etd"
 	"lirs2/lfu"
 	"lirs2/lru"
 	"lirs2/lruwsr"
@@ -68,6 +69,8 @@ func main() {
 			simulator = lfu.NewLFU(cache)
 		case "lru":
 			simulator = lru.NewLRU(cache)
+		case "etd":
+			simulator = etd.Etd(cache)
 		case "lruwsr":
 			simulator = lruwsr.NewLRUWSR(cache)
 		default:
