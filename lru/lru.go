@@ -15,11 +15,11 @@ type (
 	}
 
 	LRU struct {
-		maxlen     int
+		maxLen     int
 		available  int
 		hit        int
 		miss       int
-		pagefault  int
+		pageFault  int
 		writeCount int
 		readCount  int
 		writeCost  float32
@@ -32,11 +32,11 @@ type (
 
 func NewLRU(value int) *LRU {
 	lru := &LRU{
-		maxlen:      value,
+		maxLen:      value,
 		available:   value,
 		hit:         0,
 		miss:        0,
-		pagefault:   0,
+		pageFault:   0,
 		writeCount:  0,
 		readCount:   0,
 		writeCost:   0.25,
@@ -67,7 +67,7 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 			lru.available--
 			lru.orderedList.Set(data.lba, node)
 		} else {
-			lru.pagefault++
+			lru.pageFault++
 			if _, firstValue, ok := lru.orderedList.GetFirst(); ok {
 				lruLba := firstValue.(*Node)
 
@@ -94,7 +94,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 }
 
 func (lru LRU) PrintToFile(file *os.File, timeStart time.Time) (err error) {
-	file.WriteString(fmt.Sprintf("cache size: %d\n", lru.maxlen))
+	file.WriteString(fmt.Sprintf("cache size: %d\n", lru.maxLen))
 	file.WriteString(fmt.Sprintf("cache hit: %d\n", lru.hit))
 	file.WriteString(fmt.Sprintf("cache miss: %d\n", lru.miss))
 	file.WriteString(fmt.Sprintf("write count: %d\n", lru.writeCount))
