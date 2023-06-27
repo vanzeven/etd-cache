@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/secnot/orderedmap"
 	"lirs2/simulator"
+	"math/rand"
 	"os"
 	"time"
 )
@@ -56,29 +57,35 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 		}
 		return true
 	} else {
+		// RNG: 33% chance for block to enter Qf
 		lru.miss++
 		lru.readCount++
 
-		node := &Node{
-			lba: data.lba,
-			op:  data.op,
-		}
-		if lru.available > 0 {
-			lru.available--
-			lru.orderedList.Set(data.lba, node)
-		} else {
-			lru.pageFault++
-			if _, firstValue, ok := lru.orderedList.GetFirst(); ok {
-				lruLba := firstValue.(*Node)
-
-				if lruLba.op == "W" {
-					lru.writeCount++
-				}
-				lru.orderedList.PopFirst()
-			} else {
-				fmt.Println("No elements found to remove")
+		var qfThreshold = 33
+		if rand.Intn(100) <= qfThreshold {
+			node := &Node{
+				lba: data.lba,
+				op:  data.op,
 			}
-			lru.orderedList.Set(data.lba, node)
+			if lru.available > 0 {
+				lru.available--
+				lru.orderedList.Set(data.lba, node)
+			} else {
+				lru.pageFault++
+				if _, firstValue, ok := lru.orderedList.GetFirst(); ok {
+					lruLba := firstValue.(*Node)
+
+					if lruLba.op == "W" {
+						lru.writeCount++
+					}
+					lru.orderedList.PopFirst()
+				} else {
+					fmt.Println("No elements found to remove")
+				}
+				lru.orderedList.Set(data.lba, node)
+			}
+		} else {
+			lru.writeCount++
 		}
 		return false
 	}

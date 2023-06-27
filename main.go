@@ -9,6 +9,7 @@ import (
 	"lirs2/lruwsr"
 	"lirs2/simulator"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -160,6 +161,7 @@ func cleanOutputFolder() {
 			i--
 		}
 	}
-	println(i)
 	os.Chdir("..")
+	print(rand.Intn(100))
+	print("\n")
 }
