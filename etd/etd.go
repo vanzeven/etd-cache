@@ -11,8 +11,9 @@ import (
 
 type (
 	Node struct {
-		lba int
-		op  string
+		lba        int
+		op         string
+		popularity int
 	}
 
 	LRU struct {
@@ -49,6 +50,17 @@ func Etd(value int) *LRU {
 }
 
 func (lru *LRU) Put(data *Node) (exists bool) {
+	// if B in Q
+	// update ET
+
+	// elif B in Qf
+	// NB++
+	// if NB > 20
+	//  insert B to Qc
+
+	// elif B in Qc
+	//  insert B to Qc
+
 	if _, ok := lru.orderedList.Get(data.lba); ok {
 		lru.hit++
 
@@ -56,16 +68,18 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", data.lba)
 		}
 		return true
+		// else put B to Qf
 	} else {
-		// RNG: 33% chance for block to enter Qf
+		//  RNG: 33% chance for block to enter Qf
 		lru.miss++
 		lru.readCount++
 
 		var qfThreshold = 33
 		if rand.Intn(100) <= qfThreshold {
 			node := &Node{
-				lba: data.lba,
-				op:  data.op,
+				lba:        data.lba,
+				op:         data.op,
+				popularity: 1,
 			}
 			if lru.available > 0 {
 				lru.available--
@@ -84,9 +98,10 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 				}
 				lru.orderedList.Set(data.lba, node)
 			}
-		} else {
+		} else if data.op == "W" {
 			lru.writeCount++
 		}
+
 		return false
 	}
 }
