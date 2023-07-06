@@ -49,7 +49,23 @@ func Etd(value int) *LRU {
 	return lru
 }
 
-func (lru *LRU) Put(data *Node) (exists bool) {
+//func (lru *LRU) Put(data *Node) (exists bool) {
+
+//}
+
+func (lru *LRU) Get(trace simulator.Trace) (err error) {
+	data := new(Node)
+	data.lba = trace.Addr
+	data.op = trace.Op
+	data.pop = 0
+	//lru.Put(obj)
+
+	//node := &Node{
+	//	lba: data.lba,
+	//	op:  data.op,
+	//	pop: data.pop,
+	//}
+
 	// if B in Q
 	// update ET
 
@@ -57,12 +73,6 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 	// NB++
 	// if NB > 20
 	//  insert B to Qc
-
-	node := &Node{
-		lba: data.lba,
-		op:  data.op,
-		pop: data.pop,
-	}
 
 	if _, ok := lru.orderedList.Get(data.lba); ok {
 		lru.hit++
@@ -72,7 +82,7 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 		if ok := lru.orderedList.MoveLast(data.lba); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", data.lba)
 		}
-		return true
+		return nil
 
 		//} else if true {
 		//	// elif B in Qc
@@ -88,7 +98,7 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 		if rand.Intn(100) <= qfThreshold {
 			if lru.available > 0 {
 				lru.available--
-				lru.orderedList.Set(data.lba, node)
+				lru.orderedList.Set(data.lba, data)
 			} else {
 				lru.pageFault++
 				if _, firstValue, ok := lru.orderedList.GetFirst(); ok {
@@ -101,22 +111,14 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 				} else {
 					fmt.Println("No elements found to remove")
 				}
-				lru.orderedList.Set(data.lba, node)
+				lru.orderedList.Set(data.lba, data)
 			}
 		} else if data.op == "W" {
 			lru.writeCount++
 		}
 
-		return false
+		return nil
 	}
-}
-
-func (lru *LRU) Get(trace simulator.Trace) (err error) {
-	obj := new(Node)
-	obj.lba = trace.Addr
-	obj.op = trace.Op
-	obj.pop = 0
-	lru.Put(obj)
 
 	return nil
 }
