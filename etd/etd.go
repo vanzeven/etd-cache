@@ -13,7 +13,6 @@ type (
 	Node struct {
 		lba int
 		op  string
-		pop int
 	}
 
 	LRU struct {
@@ -57,7 +56,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	data := new(Node)
 	data.lba = trace.Addr
 	data.op = trace.Op
-	data.pop = 0
+
 	//lru.Put(obj)
 
 	//node := &Node{
@@ -77,7 +76,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	if _, ok := lru.orderedList.Get(data.lba); ok {
 		lru.hit++
 		print(data.lba)
-		print(data.pop)
+		print(data.op)
 
 		if ok := lru.orderedList.MoveLast(data.lba); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", data.lba)
@@ -91,6 +90,12 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	} else {
 		// else put B to Qf
 		//  RNG: 33% chance for block to enter Qf
+
+		print(data.lba)
+		data.op = "T"
+		print(data.op + "\n")
+		print("miss\n")
+
 		lru.miss++
 		lru.readCount++
 
@@ -119,8 +124,6 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 
 		return nil
 	}
-
-	return nil
 }
 
 func (lru LRU) PrintToFile(file *os.File, timeStart time.Time) (err error) {
