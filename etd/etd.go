@@ -11,9 +11,9 @@ import (
 
 type (
 	Node struct {
-		lba        int
-		op         string
-		popularity int
+		lba int
+		op  string
+		pop int
 	}
 
 	LRU struct {
@@ -58,29 +58,34 @@ func (lru *LRU) Put(data *Node) (exists bool) {
 	// if NB > 20
 	//  insert B to Qc
 
-	// elif B in Qc
-	//  insert B to Qc
+	node := &Node{
+		lba: data.lba,
+		op:  data.op,
+		pop: data.pop,
+	}
 
 	if _, ok := lru.orderedList.Get(data.lba); ok {
 		lru.hit++
+		print(data.lba)
+		print(data.pop)
 
 		if ok := lru.orderedList.MoveLast(data.lba); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", data.lba)
 		}
 		return true
-		// else put B to Qf
+
+		//} else if true {
+		//	// elif B in Qc
+		//	//  insert B to Qc
+		//	return false
 	} else {
+		// else put B to Qf
 		//  RNG: 33% chance for block to enter Qf
 		lru.miss++
 		lru.readCount++
 
-		var qfThreshold = 33
+		var qfThreshold = 100
 		if rand.Intn(100) <= qfThreshold {
-			node := &Node{
-				lba:        data.lba,
-				op:         data.op,
-				popularity: 1,
-			}
 			if lru.available > 0 {
 				lru.available--
 				lru.orderedList.Set(data.lba, node)
@@ -110,6 +115,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	obj := new(Node)
 	obj.lba = trace.Addr
 	obj.op = trace.Op
+	obj.pop = 0
 	lru.Put(obj)
 
 	return nil
