@@ -63,8 +63,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 
 	if _, ok := lru.orderedList.Get(trace.Addr); ok {
 		lru.hit++
-		print(trace.Addr)
-		print(trace.Op)
+		print("\nblock number ", trace.Addr, " found in Qf")
 
 		if ok := lru.orderedList.MoveLast(trace.Addr); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
@@ -79,11 +78,6 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		// else put B to Qf
 		//  RNG: 33% chance for block to enter Qf
 
-		print(trace.Addr)
-		//data.op = "T"
-		print(trace.Op + " ")
-		print("miss\n")
-
 		lru.miss++
 		lru.readCount++
 
@@ -91,17 +85,13 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		if rand.Intn(100) <= qfThreshold {
 			if lru.available > 0 {
 				lru.available--
-				print("insert to lru\n")
-				print(trace.Addr)
-				print(trace.Op)
-				print("\n-----\n")
 				lru.orderedList.Set(trace.Addr, trace.Op)
+				print("\ninserting block ", trace.Addr, " to Qf")
 			} else {
 				lru.pageFault++
 				if _, op, ok := lru.orderedList.GetFirst(); ok {
 
-					op2 := op.(string)
-					print("LRU is full do operation: ", op2, "\n")
+					//op2 := op.(string)
 					if op == "W" {
 						lru.writeCount++
 					}
@@ -110,6 +100,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					fmt.Println("No elements found to remove")
 				}
 				lru.orderedList.Set(trace.Addr, trace.Op)
+				print("\nno space left in Qf, popping then inserting: ", trace.Addr)
 			}
 		} else if trace.Op == "W" {
 			lru.writeCount++
