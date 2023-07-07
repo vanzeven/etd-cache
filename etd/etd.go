@@ -57,7 +57,6 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// NB++
 	// if NB > 20
 	//  insert B to Qc
-
 	if op, ok := lru.orderedList.Get(trace.Addr); ok {
 		lru.hit++
 
@@ -80,9 +79,9 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		//	//  insert B to Qc
 		//	return false
 	} else {
+
 		// else put B to Qf
 		//  RNG: 33% chance for block to enter Qf
-
 		lru.miss++
 		lru.readCount++
 
