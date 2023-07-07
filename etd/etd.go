@@ -6,6 +6,7 @@ import (
 	"lirs2/simulator"
 	"math/rand"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -48,10 +49,6 @@ func Etd(value int) *LRU {
 	return lru
 }
 
-//func (lru *LRU) Put(data *Node) (exists bool) {
-
-//}
-
 func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// if B in Q
 	// update ET
@@ -61,10 +58,18 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// if NB > 20
 	//  insert B to Qc
 
-	if _, ok := lru.orderedList.Get(trace.Addr); ok {
+	if op, ok := lru.orderedList.Get(trace.Addr); ok {
 		lru.hit++
-		print("\nblock number ", trace.Addr, " found in Qf")
 
+		op2 := op.(string)
+		op3 := op2[:1]
+		pop3, _ := strconv.Atoi(op2[1:])
+		pop3++
+
+		print("\nblock number ", trace.Addr, " found in Qf, pop: ", pop3)
+
+		op3 = op3 + strconv.Itoa(pop3)
+		lru.orderedList.Set(trace.Addr, op3)
 		if ok := lru.orderedList.MoveLast(trace.Addr); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
 		}
@@ -85,21 +90,25 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		if rand.Intn(100) <= qfThreshold {
 			if lru.available > 0 {
 				lru.available--
-				lru.orderedList.Set(trace.Addr, trace.Op)
-				print("\ninserting block ", trace.Addr, " to Qf")
+				pop := trace.Op + "1"
+				lru.orderedList.Set(trace.Addr, pop)
+				print("\ninserting block ", trace.Addr, " to Qf, pop: ", pop)
 			} else {
 				lru.pageFault++
 				if _, op, ok := lru.orderedList.GetFirst(); ok {
 
-					//op2 := op.(string)
-					if op == "W" {
+					op2 := op.(string)
+					op3 := op2[:1]
+
+					if op3 == "W" {
 						lru.writeCount++
 					}
 					lru.orderedList.PopFirst()
 				} else {
 					fmt.Println("No elements found to remove")
 				}
-				lru.orderedList.Set(trace.Addr, trace.Op)
+				pop := trace.Op + "1"
+				lru.orderedList.Set(trace.Addr, pop)
 				print("\npopping Qf then inserting: ", trace.Addr)
 			}
 		} else if trace.Op == "W" {
