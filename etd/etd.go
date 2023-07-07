@@ -53,18 +53,6 @@ func Etd(value int) *LRU {
 //}
 
 func (lru *LRU) Get(trace simulator.Trace) (err error) {
-	data := new(Node)
-	data.lba = trace.Addr
-	data.op = trace.Op
-
-	//lru.Put(obj)
-
-	//node := &Node{
-	//	lba: data.lba,
-	//	op:  data.op,
-	//	pop: data.pop,
-	//}
-
 	// if B in Q
 	// update ET
 
@@ -73,13 +61,13 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// if NB > 20
 	//  insert B to Qc
 
-	if _, ok := lru.orderedList.Get(data.lba); ok {
+	if _, ok := lru.orderedList.Get(trace.Addr); ok {
 		lru.hit++
-		print(data.lba)
-		print(data.op)
+		print(trace.Addr)
+		print(trace.Op)
 
-		if ok := lru.orderedList.MoveLast(data.lba); !ok {
-			fmt.Printf("Failed to move LBA %d to MRU position\n", data.lba)
+		if ok := lru.orderedList.MoveLast(trace.Addr); !ok {
+			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
 		}
 		return nil
 
@@ -91,9 +79,9 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		// else put B to Qf
 		//  RNG: 33% chance for block to enter Qf
 
-		print(data.lba)
-		data.op = "T"
-		print(data.op + "\n")
+		print(trace.Addr)
+		//data.op = "T"
+		print(trace.Op + " ")
 		print("miss\n")
 
 		lru.miss++
@@ -103,22 +91,27 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		if rand.Intn(100) <= qfThreshold {
 			if lru.available > 0 {
 				lru.available--
-				lru.orderedList.Set(data.lba, data)
+				print("insert to lru\n")
+				print(trace.Addr)
+				print(trace.Op)
+				print("\n-----\n")
+				lru.orderedList.Set(trace.Addr, trace.Op)
 			} else {
 				lru.pageFault++
-				if _, firstValue, ok := lru.orderedList.GetFirst(); ok {
-					lruLba := firstValue.(*Node)
+				if _, op, ok := lru.orderedList.GetFirst(); ok {
 
-					if lruLba.op == "W" {
+					op2 := op.(string)
+					print("LRU is full do operation: ", op2, "\n")
+					if op == "W" {
 						lru.writeCount++
 					}
 					lru.orderedList.PopFirst()
 				} else {
 					fmt.Println("No elements found to remove")
 				}
-				lru.orderedList.Set(data.lba, data)
+				lru.orderedList.Set(trace.Addr, trace.Op)
 			}
-		} else if data.op == "W" {
+		} else if trace.Op == "W" {
 			lru.writeCount++
 		}
 

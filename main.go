@@ -89,7 +89,7 @@ func main() {
 
 		simulator.PrintToFile(out, timeStart)
 	}
-	fmt.Println("Done")
+	fmt.Println("\nDone")
 }
 
 func validateCacheSize(tracesize []string) (sizeList []int, err error) {
