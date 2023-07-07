@@ -100,7 +100,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					fmt.Println("No elements found to remove")
 				}
 				lru.orderedList.Set(trace.Addr, trace.Op)
-				print("\nno space left in Qf, popping then inserting: ", trace.Addr)
+				print("\npopping Qf then inserting: ", trace.Addr)
 			}
 		} else if trace.Op == "W" {
 			lru.writeCount++
