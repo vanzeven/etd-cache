@@ -28,23 +28,24 @@ type (
 		readCost   float32
 		eraseCost  float32
 
-		orderedList *orderedmap.OrderedMap
+		qf *orderedmap.OrderedMap
+		qc *orderedmap.OrderedMap
 	}
 )
 
 func Etd(value int) *LRU {
 	lru := &LRU{
-		maxLen:      value,
-		available:   value,
-		hit:         0,
-		miss:        0,
-		pageFault:   0,
-		writeCount:  0,
-		readCount:   0,
-		writeCost:   0.25,
-		readCost:    0.025,
-		eraseCost:   2,
-		orderedList: orderedmap.NewOrderedMap(),
+		maxLen:     value,
+		available:  value,
+		hit:        0,
+		miss:       0,
+		pageFault:  0,
+		writeCount: 0,
+		readCount:  0,
+		writeCost:  0.25,
+		readCost:   0.025,
+		eraseCost:  2,
+		qf:         orderedmap.NewOrderedMap(),
 	}
 	return lru
 }
@@ -57,7 +58,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// NB++
 	// if NB > 20
 	//  insert B to Qc
-	if op, ok := lru.orderedList.Get(trace.Addr); ok {
+	if op, ok := lru.qf.Get(trace.Addr); ok {
 		lru.hit++
 
 		op2 := op.(string)
@@ -68,8 +69,8 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		print("\nblock number ", trace.Addr, " found in Qf, pop: ", pop3)
 
 		op3 = op3 + strconv.Itoa(pop3)
-		lru.orderedList.Set(trace.Addr, op3)
-		if ok := lru.orderedList.MoveLast(trace.Addr); !ok {
+		lru.qf.Set(trace.Addr, op3)
+		if ok := lru.qf.MoveLast(trace.Addr); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
 		}
 		return nil
@@ -90,11 +91,11 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 			if lru.available > 0 {
 				lru.available--
 				pop := trace.Op + "1"
-				lru.orderedList.Set(trace.Addr, pop)
+				lru.qf.Set(trace.Addr, pop)
 				print("\ninserting block ", trace.Addr, " to Qf, pop: ", pop)
 			} else {
 				lru.pageFault++
-				if _, op, ok := lru.orderedList.GetFirst(); ok {
+				if _, op, ok := lru.qf.GetFirst(); ok {
 
 					op2 := op.(string)
 					op3 := op2[:1]
@@ -102,12 +103,12 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					if op3 == "W" {
 						lru.writeCount++
 					}
-					lru.orderedList.PopFirst()
+					lru.qf.PopFirst()
 				} else {
 					fmt.Println("No elements found to remove")
 				}
 				pop := trace.Op + "1"
-				lru.orderedList.Set(trace.Addr, pop)
+				lru.qf.Set(trace.Addr, pop)
 				print("\npopping Qf then inserting: ", trace.Addr)
 			}
 		} else if trace.Op == "W" {
