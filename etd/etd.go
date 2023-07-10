@@ -116,6 +116,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		lru.miss++
 		lru.readCount++
 
+		// TODO: change to nonrandom 1/3
 		var qfThreshold = 100
 		if rand.Intn(100) <= qfThreshold {
 			if lru.available > 0 {
@@ -147,6 +148,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 
 		return nil
 	}
+	return nil
 }
 
 func (lru LRU) PrintToFile(file *os.File, timeStart time.Time) (err error) {
