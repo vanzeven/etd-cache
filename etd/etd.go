@@ -103,6 +103,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	} else if _, ok := lru.qc.Get(trace.Addr); ok {
 		// elif B in Qc
 		//  insert B to Qc
+		lru.hit++
 		print("\nblock number ", trace.Addr, " found in Qc")
 		if ok := lru.qc.MoveLast(trace.Addr); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
