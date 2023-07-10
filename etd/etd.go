@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/secnot/orderedmap"
 	"lirs2/simulator"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -17,16 +18,17 @@ type (
 	}
 
 	LRU struct {
-		maxLen     int
-		available  int
-		hit        int
-		miss       int
-		pageFault  int
-		writeCount int
-		readCount  int
-		writeCost  float32
-		readCost   float32
-		eraseCost  float32
+		maxLen      int
+		available   int
+		qcAvailable int
+		hit         int
+		miss        int
+		pageFault   int
+		writeCount  int
+		readCount   int
+		writeCost   float32
+		readCost    float32
+		eraseCost   float32
 
 		qf *orderedmap.OrderedMap
 		qc *orderedmap.OrderedMap
@@ -35,17 +37,19 @@ type (
 
 func Etd(value int) *LRU {
 	lru := &LRU{
-		maxLen:     value,
-		available:  value,
-		hit:        0,
-		miss:       0,
-		pageFault:  0,
-		writeCount: 0,
-		readCount:  0,
-		writeCost:  0.25,
-		readCost:   0.025,
-		eraseCost:  2,
-		qf:         orderedmap.NewOrderedMap(),
+		maxLen:      value,
+		available:   value,
+		qcAvailable: int(math.Ceil(float64(value) / 10)),
+		hit:         0,
+		miss:        0,
+		pageFault:   0,
+		writeCount:  0,
+		readCount:   0,
+		writeCost:   0.25,
+		readCost:    0.025,
+		eraseCost:   2,
+		qf:          orderedmap.NewOrderedMap(),
+		qc:          orderedmap.NewOrderedMap(),
 	}
 	return lru
 }
@@ -66,19 +70,45 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		pop3, _ := strconv.Atoi(op2[1:])
 		pop3++
 
-		print("\nblock number ", trace.Addr, " found in Qf, pop: ", pop3)
+		if pop3 > 20 {
+			print("\nblock number ", trace.Addr, " reached threshold, moving to Qc")
+			if lru.qcAvailable > 0 {
+				lru.qcAvailable--
+				lru.qc.Set(trace.Addr, op3)
+				print("\ninserting block ", trace.Addr, " to Qc")
+			} else {
+				lru.pageFault++
+				if _, op, ok := lru.qc.GetFirst(); ok {
 
-		op3 = op3 + strconv.Itoa(pop3)
-		lru.qf.Set(trace.Addr, op3)
-		if ok := lru.qf.MoveLast(trace.Addr); !ok {
+					if op == "W" {
+						lru.writeCount++
+					}
+					lru.qc.PopFirst()
+				} else {
+					fmt.Println("No elements found to remove")
+				}
+				lru.qc.Set(trace.Addr, op3)
+				print("\npopping Qc then inserting: ", trace.Addr)
+			}
+			lru.qf.Delete(trace.Addr)
+			lru.available++
+		} else {
+			print("\nblock number ", trace.Addr, " found in Qf, pop: ", pop3)
+			op3 = op3 + strconv.Itoa(pop3)
+			lru.qf.Set(trace.Addr, op3)
+			if ok := lru.qf.MoveLast(trace.Addr); !ok {
+				fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
+			}
+		}
+	} else if _, ok := lru.qc.Get(trace.Addr); ok {
+		// elif B in Qc
+		//  insert B to Qc
+		print("\nblock number ", trace.Addr, " found in Qc")
+		if ok := lru.qc.MoveLast(trace.Addr); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
 		}
-		return nil
 
-		//} else if true {
-		//	// elif B in Qc
-		//	//  insert B to Qc
-		//	return false
+		return nil
 	} else {
 
 		// else put B to Qf
