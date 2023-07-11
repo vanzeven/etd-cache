@@ -5,7 +5,6 @@ import (
 	"github.com/secnot/orderedmap"
 	"lirs2/simulator"
 	"math"
-	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -125,8 +124,8 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					lru.qetd[i][1] = 4
 				}
 				// TODO: set 3 for debugging, use 100 in prod
-				lru.qetd[i][2] = lru.clock + 3
-				lru.qetd[i][3] = 3
+				lru.qetd[i][2] = lru.clock + 100
+				lru.qetd[i][3] = 100
 				print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3])
 
 			} else if lru.qcAvailable > 0 {
@@ -175,8 +174,8 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		lru.readCount++
 
 		// TODO: change to nonrandom 1/3
-		var qfThreshold = 100
-		if rand.Intn(100) <= qfThreshold {
+		filter := lru.clock % 3
+		if filter == 0 {
 			if lru.available > 0 {
 				lru.available--
 				pop := trace.Op + "1"
