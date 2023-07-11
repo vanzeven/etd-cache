@@ -80,7 +80,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					if lru.clock > lru.qetd[i][2] {
 						lru.available++
 						lru.pageFault++
-						print("\netp reached, popping block number ", lru.qetd[i][0])
+						//print("\netp reached, popping block number ", lru.qetd[i][0])
 						if lru.qetd[i][1] == 2 {
 							lru.writeCount++
 						}
@@ -92,7 +92,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					etp := 2 * lru.qetd[i][3]
 					lru.qetd[i][3] = etp
 					lru.qetd[i][2] = lru.clock + etp
-					print("\nblock number ", trace.Addr, " found in Q, etp: ", etp)
+					//print("\nblock number ", trace.Addr, " found in Q, etp: ", etp)
 				}
 			}
 			i++
@@ -127,12 +127,12 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 				init := 100
 				lru.qetd[i][2] = lru.clock + init
 				lru.qetd[i][3] = init
-				print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3], " in pos ", i)
+				//print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3], " in pos ", i)
 
 			} else if lru.qcAvailable > 0 {
 				lru.qcAvailable--
 				lru.qc.Set(trace.Addr, op3)
-				print("\ninserting block ", trace.Addr, " to Qc")
+				//print("\ninserting block ", trace.Addr, " to Qc")
 			} else {
 				lru.pageFault++
 				if _, op, ok := lru.qc.GetFirst(); ok {
@@ -142,26 +142,26 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					}
 					lru.qc.PopFirst()
 				} else {
-					fmt.Println("No elements found to remove")
+					//fmt.Println("No elements found to remove")
 				}
 				lru.qc.Set(trace.Addr, op3)
-				print("\npopping Qc then inserting: ", trace.Addr)
+				//print("\npopping Qc then inserting: ", trace.Addr)
 			}
 			lru.qf.Delete(trace.Addr)
 			lru.available++
 		} else {
-			print("\nblock number ", trace.Addr, " found in Qf, pop: ", pop3)
+			//print("\nblock number ", trace.Addr, " found in Qf, pop: ", pop3)
 			op3 = op3 + strconv.Itoa(pop3)
 			lru.qf.Set(trace.Addr, op3)
 			if ok := lru.qf.MoveLast(trace.Addr); !ok {
-				fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
+				//fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
 			}
 		}
 	} else if _, ok := lru.qc.Get(trace.Addr); ok {
 		// elif B in Qc
 		//  insert B to Qc
 		lru.hit++
-		print("\nblock number ", trace.Addr, " found in Qc")
+		//print("\nblock number ", trace.Addr, " found in Qc")
 		if ok := lru.qc.MoveLast(trace.Addr); !ok {
 			fmt.Printf("Failed to move LBA %d to MRU position\n", trace.Addr)
 		}
@@ -181,7 +181,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 				lru.available--
 				pop := trace.Op + "1"
 				lru.qf.Set(trace.Addr, pop)
-				print("\ninserting block ", trace.Addr, " to Qf, pop: ", pop)
+				//print("\ninserting block ", trace.Addr, " to Qf, pop: ", pop)
 			} else {
 				lru.pageFault++
 				if _, op, ok := lru.qf.GetFirst(); ok {
@@ -198,7 +198,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 				}
 				pop := trace.Op + "1"
 				lru.qf.Set(trace.Addr, pop)
-				print("\npopping Qf then inserting: ", trace.Addr)
+				//print("\npopping Qf then inserting: ", trace.Addr)
 			}
 		} else if trace.Op == "W" {
 			lru.writeCount++
@@ -207,6 +207,10 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		return nil
 	}
 	lru.clock++
+	currClock := lru.clock % 40000
+	if currClock == 0 {
+		print("\nclock currently at ", lru.clock/40000)
+	}
 	return nil
 }
 
