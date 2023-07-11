@@ -124,9 +124,10 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					lru.qetd[i][1] = 4
 				}
 				// TODO: set 3 for debugging, use 100 in prod
-				lru.qetd[i][2] = lru.clock + 100
-				lru.qetd[i][3] = 100
-				print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3])
+				init := 100
+				lru.qetd[i][2] = lru.clock + init
+				lru.qetd[i][3] = init
+				print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3], " in pos ", i)
 
 			} else if lru.qcAvailable > 0 {
 				lru.qcAvailable--
