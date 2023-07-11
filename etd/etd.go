@@ -30,8 +30,9 @@ type (
 		readCost    float32
 		eraseCost   float32
 
-		qf *orderedmap.OrderedMap
-		qc *orderedmap.OrderedMap
+		qf   *orderedmap.OrderedMap
+		qc   *orderedmap.OrderedMap
+		qetd [][3]int
 	}
 )
 
@@ -50,13 +51,34 @@ func Etd(value int) *LRU {
 		eraseCost:   2,
 		qf:          orderedmap.NewOrderedMap(),
 		qc:          orderedmap.NewOrderedMap(),
+		qetd:        make([][3]int, value),
 	}
 	return lru
+}
+
+func checkValueExistsa(arr [][3]int, value int) bool {
+	for i := 0; i < len(arr); i++ {
+		if arr[i][0] == value {
+			return true
+		}
+	}
+	return false
+}
+
+func checkValueExists(qetd [][3]int, value int) bool {
+	for i := 0; i < len(qetd); i++ {
+		if qetd[i][0] == value {
+			return true
+		}
+	}
+	return false
 }
 
 func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// if B in Q
 	// update ET
+	existInQ := checkValueExists(lru.qetd, trace.Addr)
+	if existInQ
 
 	// elif B in Qf
 	// NB++
