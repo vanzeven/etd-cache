@@ -18,51 +18,46 @@ type (
 	}
 
 	LRU struct {
-		maxLen      int
-		available   int
-		qcAvailable int
-		hit         int
-		miss        int
-		pageFault   int
-		writeCount  int
-		readCount   int
-		writeCost   float32
-		readCost    float32
-		eraseCost   float32
+		maxLen        int
+		available     int
+		qcAvailable   int
+		qetdAvailable int
+		hit           int
+		miss          int
+		pageFault     int
+		writeCount    int
+		readCount     int
+		writeCost     float32
+		readCost      float32
+		eraseCost     float32
 
-		qf   *orderedmap.OrderedMap
-		qc   *orderedmap.OrderedMap
-		qetd [][3]int
+		qf    *orderedmap.OrderedMap
+		qc    *orderedmap.OrderedMap
+		qetd  [][3]int
+		clock int
 	}
 )
 
 func Etd(value int) *LRU {
 	lru := &LRU{
-		maxLen:      value,
-		available:   value,
-		qcAvailable: int(math.Ceil(float64(value) / 10)),
-		hit:         0,
-		miss:        0,
-		pageFault:   0,
-		writeCount:  0,
-		readCount:   0,
-		writeCost:   0.25,
-		readCost:    0.025,
-		eraseCost:   2,
-		qf:          orderedmap.NewOrderedMap(),
-		qc:          orderedmap.NewOrderedMap(),
-		qetd:        make([][3]int, value),
+		maxLen:        value,
+		available:     value,
+		qcAvailable:   int(math.Ceil(float64(value) / 10)),
+		qetdAvailable: value,
+		clock:         0,
+		hit:           0,
+		miss:          0,
+		pageFault:     0,
+		writeCount:    0,
+		readCount:     0,
+		writeCost:     0.25,
+		readCost:      0.025,
+		eraseCost:     2,
+		qf:            orderedmap.NewOrderedMap(),
+		qc:            orderedmap.NewOrderedMap(),
+		qetd:          make([][3]int, value),
 	}
 	return lru
-}
-
-func checkValueExistsa(arr [][3]int, value int) bool {
-	for i := 0; i < len(arr); i++ {
-		if arr[i][0] == value {
-			return true
-		}
-	}
-	return false
 }
 
 func checkValueExists(qetd [][3]int, value int) bool {
@@ -78,13 +73,18 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	// if B in Q
 	// update ET
 	existInQ := checkValueExists(lru.qetd, trace.Addr)
-	if existInQ
+	if existInQ {
+		i := 0
+		for i < lru.maxLen {
 
-	// elif B in Qf
-	// NB++
-	// if NB > 20
-	//  insert B to Qc
-	if op, ok := lru.qf.Get(trace.Addr); ok {
+			i++
+		}
+
+		// elif B in Qf
+		// NB++
+		// if NB > 20
+		//  insert B to Q or Qc
+	} else if op, ok := lru.qf.Get(trace.Addr); ok {
 		lru.hit++
 
 		op2 := op.(string)
@@ -94,7 +94,23 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 
 		if pop3 > 20 {
 			print("\nblock number ", trace.Addr, " reached threshold, moving to Qc")
-			if lru.qcAvailable > 0 {
+			if lru.qetdAvailable > 0 {
+				lru.qetdAvailable--
+				i := 0
+				for lru.qetd[i][0] != 0 {
+					i++
+				}
+				lru.qetd[i][0] = trace.Addr
+				if op3 == "W" {
+					lru.qetd[i][1] = 2
+				} else {
+					lru.qetd[i][1] = 4
+				}
+				// temp: set 3 for debugging, use 100 in prod
+				lru.qetd[i][2] = 3
+				print("\ninserting block ", trace.Addr, " to Qc with ETP of ", lru.qetd[i][2])
+
+			} else if lru.qcAvailable > 0 {
 				lru.qcAvailable--
 				lru.qc.Set(trace.Addr, op3)
 				print("\ninserting block ", trace.Addr, " to Qc")
@@ -171,6 +187,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 
 		return nil
 	}
+	lru.clock++
 	return nil
 }
 
