@@ -33,7 +33,7 @@ type (
 
 		qf    *orderedmap.OrderedMap
 		qc    *orderedmap.OrderedMap
-		qetd  [][3]int
+		qetd  [][4]int
 		clock int
 	}
 )
@@ -55,12 +55,12 @@ func Etd(value int) *LRU {
 		eraseCost:     2,
 		qf:            orderedmap.NewOrderedMap(),
 		qc:            orderedmap.NewOrderedMap(),
-		qetd:          make([][3]int, value),
+		qetd:          make([][4]int, value),
 	}
 	return lru
 }
 
-func checkValueExists(qetd [][3]int, value int) bool {
+func checkValueExists(qetd [][4]int, value int) bool {
 	for i := 0; i < len(qetd); i++ {
 		if qetd[i][0] == value {
 			return true
@@ -76,7 +76,26 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 	if existInQ {
 		i := 0
 		for i < lru.maxLen {
-
+			if lru.qetd[i][0] != 0 {
+				if lru.qetd[i][0] != trace.Addr {
+					if lru.clock > lru.qetd[i][2] {
+						lru.available++
+						lru.pageFault++
+						print("\netp reached, popping block number ", lru.qetd[i][0])
+						if lru.qetd[i][1] == 2 {
+							lru.writeCount++
+						}
+						lru.qetd[i][0] = 0
+					}
+				} else {
+					lru.hit++
+					// we S2 as default, ET = 2ET
+					etp := 2 * lru.qetd[i][3]
+					lru.qetd[i][3] = etp
+					lru.qetd[i][2] = lru.clock + etp
+					print("\nblock number ", trace.Addr, " found in Q, etp: ", etp)
+				}
+			}
 			i++
 		}
 
@@ -93,7 +112,6 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		pop3++
 
 		if pop3 > 20 {
-			print("\nblock number ", trace.Addr, " reached threshold, moving to Qc")
 			if lru.qetdAvailable > 0 {
 				lru.qetdAvailable--
 				i := 0
@@ -106,9 +124,10 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 				} else {
 					lru.qetd[i][1] = 4
 				}
-				// temp: set 3 for debugging, use 100 in prod
-				lru.qetd[i][2] = 3
-				print("\ninserting block ", trace.Addr, " to Qc with ETP of ", lru.qetd[i][2])
+				// TODO: set 3 for debugging, use 100 in prod
+				lru.qetd[i][2] = lru.clock + 3
+				lru.qetd[i][3] = 3
+				print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3])
 
 			} else if lru.qcAvailable > 0 {
 				lru.qcAvailable--
