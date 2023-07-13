@@ -79,7 +79,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 				if lru.qetd[i][0] != trace.Addr {
 					if lru.clock > lru.qetd[i][2] {
 						lru.available++
-						lru.pageFault++
+						//lru.pageFault++
 						//print("\netp reached, popping block number ", lru.qetd[i][0])
 						if lru.qetd[i][1] == 2 {
 							lru.writeCount++
@@ -124,7 +124,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 					lru.qetd[i][1] = 4
 				}
 				// TODO: set 3 for debugging, use 100 in prod
-				init := 100
+				init := 1000
 				lru.qetd[i][2] = lru.clock + init
 				lru.qetd[i][3] = init
 				//print("\ninserting block ", trace.Addr, " to Q with ETP of ", lru.qetd[i][3], " in pos ", i)
@@ -134,7 +134,7 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 				lru.qc.Set(trace.Addr, op3)
 				//print("\ninserting block ", trace.Addr, " to Qc")
 			} else {
-				lru.pageFault++
+				//lru.pageFault++
 				if _, op, ok := lru.qc.GetFirst(); ok {
 
 					if op == "W" {
@@ -175,15 +175,15 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		lru.readCount++
 
 		// TODO: change to nonrandom 1/3
-		filter := lru.clock % 3
-		if filter == 0 {
+		//filter := lru.clock % 3
+		if true {
 			if lru.available > 0 {
 				lru.available--
 				pop := trace.Op + "1"
 				lru.qf.Set(trace.Addr, pop)
 				//print("\ninserting block ", trace.Addr, " to Qf, pop: ", pop)
 			} else {
-				lru.pageFault++
+				//lru.pageFault++
 				if _, op, ok := lru.qf.GetFirst(); ok {
 
 					op2 := op.(string)
@@ -207,9 +207,13 @@ func (lru *LRU) Get(trace simulator.Trace) (err error) {
 		return nil
 	}
 	lru.clock++
-	currClock := lru.clock % 40000
+	clockMod := 50000
+	currClock := lru.clock % clockMod
+	if lru.clock == 1 {
+		print("\n", lru.available, " ", lru.qcAvailable, " ", lru.qetdAvailable)
+	}
 	if currClock == 0 {
-		print("\nclock currently at ", lru.clock/40000)
+		print("\nclock currently at ", lru.clock/clockMod)
 	}
 	return nil
 }
