@@ -4,8 +4,9 @@ This is an implementation of the ETD cache replacement algorithm implemented in 
 paper: https://dl.acm.org/doi/abs/10.1145/2742854.2742881
 
 ## Prerequirements
-1. Install Go
+1. Install Go and a good IDE (GoLand or VSCode are good choices)
 2. Install Nim
+3. Find some traces
 
 ## How To Run ?
 1. Choose dataset
