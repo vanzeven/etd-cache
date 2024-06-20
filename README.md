@@ -24,11 +24,12 @@ nim c [nama program].nim
 go get github.com/petar/GoLLRB
 go get github.com/secnot/orderedmap
 ```
-6. Build ```main.go```
+6. Run ```main.go``` (algo is case insensitive)
 ```
-go build main.go
+go run main.go [algorithm(LRU|CFLRU|LRUWSR)] [file] [trace size]
 ```
-7. Running ```main``` and choose one algorithm
+
+example command
 ```
-./main [algorithm(LRU|CFLRU|LRUWSR)] [file] [trace size]...
+go run .\main.go lru .\converter\fin2-src18m 5000
 ```
