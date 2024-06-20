@@ -155,7 +155,7 @@ func cleanOutputFolder() {
 	for _, file := range files {
 		fmt.Println(file.Name(), file.IsDir())
 		os.Chdir("./output/")
-		if i > 3 {
+		if i > 9 {
 			os.Remove(file.Name())
 			i--
 		}
