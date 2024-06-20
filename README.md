@@ -26,7 +26,7 @@ go get github.com/secnot/orderedmap
 ```
 6. Run ```main.go``` (algo is case insensitive)
 ```
-go run main.go [algorithm(LRU|CFLRU|LRUWSR)] [file] [trace size]
+go run main.go [algorithm(LRU|LFU|ETD)] [file] [trace size]
 ```
 
 example command
